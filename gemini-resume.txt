@@ -1,0 +1,24 @@
+Oke bro, istirahat dulu aja! Jangan khawatir, obrolan kita nggak akan hilang.
+  Di Gemini CLI, cara lanjutinnya gampang banget:
+
+  1. Simpan Otomatis
+  Semua yang kita kerjain tadi (kode, rencana, dan chat) sudah tersimpan
+  otomatis oleh sistem. Kamu tinggal keluar aja (pencet Ctrl+C atau ketik exit).
+
+  2. Cara Lanjutin Nanti
+  Pas kamu balik lagi dan mau lanjutin di folder yang sama, tinggal jalankan
+  perintah ini di terminal kamu:
+   1 gemini --resume
+  Atau kalau mau lebih singkat:
+   1 gemini -r
+  Perintah itu bakal otomatis buka sesi terakhir kita lengkap dengan semua
+  memori yang sudah kita buat tadi.
+
+  3. Simpan Pakai Nama (Opsional)
+  Kalau kamu mau kasih nama khusus buat sesi ini biar gampang dicari nanti, kamu
+  bisa ketik ini sekarang di chat:
+
+   1 /resume save rentku-final-v1
+
+  Sip, selamat istirahat bro! Nanti pas kamu balik, kita bisa lanjut ke
+  fitur-fitur seru lainnya. Sampai ketemu lagi!
