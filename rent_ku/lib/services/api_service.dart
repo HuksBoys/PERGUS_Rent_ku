@@ -1,9 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/constants.dart';
 
 class ApiService {
   final Dio dio = Dio(BaseOptions(
-    baseUrl: 'http://localhost:8000/api', // Ubah ke IP server jika perlu
+    baseUrl: Constants.apiUrl, 
     connectTimeout: const Duration(seconds: 5),
     receiveTimeout: const Duration(seconds: 3),
   ));

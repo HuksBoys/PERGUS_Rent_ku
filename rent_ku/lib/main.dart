@@ -8,6 +8,8 @@ import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/admin_dashboard.dart';
+import 'screens/onboarding_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -51,11 +53,45 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool? _showOnboarding;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkOnboarding();
+  }
+
+  Future<void> _checkOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Gunakan baris ini untuk testing biar onboarding muncul terus
+    // await prefs.setBool('showOnboarding', true); 
+    setState(() {
+      _showOnboarding = prefs.getBool('showOnboarding') ?? true;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_showOnboarding == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_showOnboarding!) {
+      return OnboardingScreen(onFinish: () async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('showOnboarding', false);
+        setState(() => _showOnboarding = false);
+      });
+    }
+
     final auth = context.watch<AuthProvider>();
 
     if (auth.isAuthenticated) {

@@ -15,6 +15,9 @@ class BarangController extends Controller
 
     public function store(Request $request)
     {
+        \Log::info('Upload Request:', $request->all());
+        \Log::info('Has File Gambar:', [$request->hasFile('gambar')]);
+
         $request->validate([
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|string|max:255',
@@ -27,7 +30,8 @@ class BarangController extends Controller
         $data = $request->all();
 
         if ($request->hasFile('gambar')) {
-            $path = $request->file('gambar')->store('public/barang');
+            $file = $request->file('gambar');
+            $path = $file->store('barang', 'public'); 
             $data['gambar'] = basename($path);
         }
 

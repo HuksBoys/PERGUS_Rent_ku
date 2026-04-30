@@ -6,6 +6,7 @@ import '../providers/barang_provider.dart';
 import '../providers/transaksi_provider.dart';
 import '../providers/theme_provider.dart';
 import '../models/barang_model.dart';
+import '../utils/constants.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
@@ -163,8 +164,8 @@ class BarangTab extends StatelessWidget {
             itemBuilder: (context, index) {
               final item = provider.items[index];
               return ListTile(
-                leading: item.gambar != null
-                    ? Image.network('http://localhost:8000/storage/barang/${item.gambar}', width: 50)
+                leading: item.gambarUrl != null
+                    ? Image.network(item.gambarUrl!, width: 50)
                     : const Icon(Icons.image),
                 title: Text(item.namaBarang),
                 subtitle: Text('Stok: ${item.stok} | Rp ${item.hargaSewa}'),

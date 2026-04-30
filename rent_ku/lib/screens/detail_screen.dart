@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/barang_model.dart';
 import '../providers/transaksi_provider.dart';
+import '../utils/constants.dart';
 
 class DetailScreen extends StatefulWidget {
   final BarangModel barang;
@@ -51,8 +52,8 @@ class _DetailScreenState extends State<DetailScreen> {
               height: 250,
               width: double.infinity,
               color: Colors.grey.shade200,
-              child: widget.barang.gambar != null
-                  ? Image.network('http://localhost:8000/storage/barang/${widget.barang.gambar}', fit: BoxFit.cover)
+              child: widget.barang.gambarUrl != null
+                  ? Image.network(widget.barang.gambarUrl!, fit: BoxFit.cover)
                   : const Icon(Icons.image, size: 100, color: Colors.grey),
             ),
             Padding(

@@ -32,7 +32,7 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            'root' => storage_path('app'),
             'serve' => true,
             'throw' => false,
             'report' => false,
@@ -41,10 +41,17 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => env('APP_URL', 'http://localhost:8000').'/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
+        ],
+
+        'barang_disk' => [
+            'driver' => 'local',
+            'root' => storage_path('app/public/barang'),
+            'url' => env('APP_URL', 'http://localhost').'/storage/barang',
+            'visibility' => 'public',
         ],
 
         's3' => [

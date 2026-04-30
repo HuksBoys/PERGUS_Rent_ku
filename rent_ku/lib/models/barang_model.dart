@@ -6,6 +6,7 @@ class BarangModel {
   final double hargaSewa;
   final int stok;
   final String? gambar;
+  final String? gambarUrl;
 
   BarangModel({
     required this.id,
@@ -15,6 +16,7 @@ class BarangModel {
     required this.hargaSewa,
     required this.stok,
     this.gambar,
+    this.gambarUrl,
   });
 
   factory BarangModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class BarangModel {
       hargaSewa: double.parse(json['harga_sewa'].toString()),
       stok: int.parse(json['stok'].toString()),
       gambar: json['gambar'],
+      gambarUrl: json['gambar_url'],
     );
   }
 

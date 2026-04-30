@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../providers/barang_provider.dart';
 import '../providers/theme_provider.dart';
+import '../utils/constants.dart';
 import 'detail_screen.dart';
 import 'history_screen.dart';
 
@@ -84,8 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                         borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
                                       ),
                                       child: Center(
-                                        child: item.gambar != null
-                                            ? Image.network('http://localhost:8000/storage/barang/${item.gambar}')
+                                        child: item.gambarUrl != null
+                                            ? Image.network(item.gambarUrl!)
                                             : const Icon(Icons.image, size: 50, color: Colors.grey),
                                       ),
                                     ),

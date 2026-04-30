@@ -20,6 +20,16 @@ class Barang extends Model
         'gambar',
     ];
 
+    protected $appends = ['gambar_url'];
+
+    public function getGambarUrlAttribute()
+    {
+        if (!$this->gambar) {
+            return null;
+        }
+        return url('storage/barang/' . $this->gambar);
+    }
+
     public function detailTransaksi()
     {
         return $this->hasMany(DetailTransaksi::class, 'barang_id');

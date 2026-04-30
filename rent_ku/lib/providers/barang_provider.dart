@@ -27,34 +27,37 @@ class BarangProvider with ChangeNotifier {
 
   Future<void> addItem(Map<String, dynamic> data) async {
     try {
-      // Handle image upload if exists
+      final file = data.remove('gambar_file');
       FormData formData = FormData.fromMap(data);
-      if (data['gambar_file'] != null) {
+      if (file != null) {
+        String fileName = file.path.split('/').last;
         formData.files.add(MapEntry(
           'gambar',
-          await MultipartFile.fromFile(data['gambar_file'].path),
+          await MultipartFile.fromFile(file.path, filename: fileName),
         ));
       }
 
-      await _apiService.dio.post('/barang', data: formData);
+      final response = await _apiService.dio.post('/barang', data: formData);
+      debugPrint('Upload success: ${response.data}');
       await fetchItems();
     } catch (e) {
+      debugPrint('Upload error: $e');
       rethrow;
     }
   }
 
   Future<void> updateItem(int id, Map<String, dynamic> data) async {
     try {
-      // Dio PUT sometimes has issues with FormData, using POST with _method=PUT
+      final file = data.remove('gambar_file');
       FormData formData = FormData.fromMap({
         ...data,
         '_method': 'PUT',
       });
       
-      if (data['gambar_file'] != null) {
+      if (file != null) {
         formData.files.add(MapEntry(
           'gambar',
-          await MultipartFile.fromFile(data['gambar_file'].path),
+          await MultipartFile.fromFile(file.path),
         ));
       }
 
