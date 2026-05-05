@@ -15,8 +15,18 @@ class BarangController extends Controller
 
     public function store(Request $request)
     {
-        \Log::info('Upload Request:', $request->all());
-        \Log::info('Has File Gambar:', [$request->hasFile('gambar')]);
+        // Debugging di terminal php artisan serve
+        if ($request->hasFile('gambar')) {
+            $file = $request->file('gambar');
+            dump([
+                'msg' => 'Debugging Upload',
+                'name' => $file->getClientOriginalName(),
+                'mime' => $file->getMimeType(),
+                'ext' => $file->getClientOriginalExtension(),
+                'isValid' => $file->isValid(),
+                'error' => $file->getError(),
+            ]);
+        }
 
         $request->validate([
             'nama_barang' => 'required|string|max:255',
@@ -24,14 +34,12 @@ class BarangController extends Controller
             'deskripsi' => 'nullable|string',
             'harga_sewa' => 'required|numeric',
             'stok' => 'required|integer',
-            'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
         $data = $request->all();
 
         if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            $path = $file->store('barang', 'public'); 
+            $path = $request->file('gambar')->store('barang', 'public');
             $data['gambar'] = basename($path);
         }
 
@@ -60,9 +68,9 @@ class BarangController extends Controller
 
         if ($request->hasFile('gambar')) {
             if ($barang->gambar) {
-                Storage::delete('public/barang/' . $barang->gambar);
+                Storage::disk('public')->delete('barang/' . $barang->gambar);
             }
-            $path = $request->file('gambar')->store('public/barang');
+            $path = $request->file('gambar')->store('barang', 'public');
             $data['gambar'] = basename($path);
         }
 
@@ -74,7 +82,7 @@ class BarangController extends Controller
     public function destroy(Barang $barang)
     {
         if ($barang->gambar) {
-            Storage::delete('public/barang/' . $barang->gambar);
+            Storage::disk('public')->delete('barang/' . $barang->gambar);
         }
         $barang->delete();
 

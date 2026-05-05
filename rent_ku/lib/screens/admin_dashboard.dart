@@ -7,8 +7,11 @@ import '../providers/transaksi_provider.dart';
 import '../providers/theme_provider.dart';
 import '../models/barang_model.dart';
 import '../utils/constants.dart';
+import '../widgets/skeleton_loader.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'scanner_screen.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -17,7 +20,8 @@ class AdminDashboard extends StatefulWidget {
   State<AdminDashboard> createState() => _AdminDashboardState();
 }
 
-class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProviderStateMixin {
+class _AdminDashboardState extends State<AdminDashboard>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -34,7 +38,8 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('Admin Dashboard',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
@@ -45,7 +50,14 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
         ),
         actions: [
           IconButton(
-            icon: Icon(context.watch<ThemeProvider>().isDarkMode ? Icons.light_mode : Icons.dark_mode),
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const ScannerScreen())),
+          ),
+          IconButton(
+            icon: Icon(context.watch<ThemeProvider>().isDarkMode
+                ? Icons.light_mode
+                : Icons.dark_mode),
             onPressed: () => context.read<ThemeProvider>().toggleTheme(),
           ),
           IconButton(
@@ -81,11 +93,13 @@ class OverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final barangProvider = context.watch<BarangProvider>();
     final transaksiProvider = context.watch<TransaksiProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final totalBarang = barangProvider.items.length;
     final totalTransaksi = transaksiProvider.transaksi.length;
-    final transaksiAktif = transaksiProvider.transaksi.where((t) => t.status == 'dipinjam').length;
-    
+    final transaksiAktif =
+        transaksiProvider.transaksi.where((t) => t.status == 'dipinjam').length;
+
     double totalPendapatan = 0;
     for (var t in transaksiProvider.transaksi) {
       final days = t.tanggalKembali.difference(t.tanggalPinjam).inDays + 1;
@@ -99,7 +113,8 @@ class OverviewTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Statistik Bisnis', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const Text('Statistik Bisnis',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           GridView.count(
             crossAxisCount: 2,
@@ -109,26 +124,138 @@ class OverviewTab extends StatelessWidget {
             mainAxisSpacing: 16,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard('Total Barang', totalBarang.toString(), Icons.inventory, Colors.blue),
-              _buildStatCard('Transaksi Aktif', transaksiAktif.toString(), Icons.timer, Colors.orange),
-              _buildStatCard('Total Sewa', totalTransaksi.toString(), Icons.receipt, Colors.green),
-              _buildStatCard('Pendapatan', NumberFormat.compactCurrency(locale: 'id', symbol: 'Rp ').format(totalPendapatan), Icons.payments, Colors.purple),
+              _buildStatCard(
+                  'Total Barang', totalBarang.toString(), Icons.inventory,
+                  Colors.blue),
+              _buildStatCard('Transaksi Aktif', transaksiAktif.toString(),
+                  Icons.timer, Colors.orange),
+              _buildStatCard(
+                  'Total Sewa', totalTransaksi.toString(), Icons.receipt,
+                  Colors.green),
+              _buildStatCard(
+                  'Pendapatan',
+                  NumberFormat.compactCurrency(locale: 'id', symbol: 'Rp ')
+                      .format(totalPendapatan),
+                  Icons.payments,
+                  Colors.purple),
             ],
           ),
-          const SizedBox(height: 24),
-          const Text('Aktivitas Terbaru', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 32),
+          const Text('Grafik Pendapatan per Kategori',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Container(
+            height: 200,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey.shade900 : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: 1000000,
+                barTouchData: BarTouchData(enabled: true),
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (double value, TitleMeta meta) {
+                        const style = TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold);
+                        String text = '';
+                        switch (value.toInt()) {
+                          case 0:
+                            text = 'Kamera';
+                            break;
+                          case 1:
+                            text = 'Laptop';
+                            break;
+                          case 2:
+                            text = 'Drone';
+                            break;
+                          case 3:
+                            text = 'HP';
+                            break;
+                        }
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(text, style: style),
+                        );
+                      },
+                    ),
+                  ),
+                  leftTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                barGroups: _generateBarGroups(transaksiProvider),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          const Text('Aktivitas Terbaru',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           ...transaksiProvider.transaksi.reversed.take(5).map((t) => Card(
-            child: ListTile(
-              leading: const Icon(Icons.person),
-              title: Text(t.user?.name ?? 'Unknown'),
-              subtitle: Text('Menyewa ${t.detailTransaksi.length} item'),
-              trailing: Text(DateFormat('dd MMM').format(t.tanggalPinjam)),
-            ),
-          )),
+                child: ListTile(
+                  leading: const Icon(Icons.person),
+                  title: Text(t.user?.name ?? 'Unknown'),
+                  subtitle: Text('Menyewa ${t.detailTransaksi.length} item'),
+                  trailing: Text(DateFormat('dd MMM').format(t.tanggalPinjam)),
+                ),
+              )),
         ],
       ),
     );
+  }
+
+  List<BarChartGroupData> _generateBarGroups(TransaksiProvider provider) {
+    Map<String, double> revenueMap = {
+      'Kamera': 0,
+      'Laptop': 0,
+      'Drone': 0,
+      'HP': 0
+    };
+
+    for (var t in provider.transaksi) {
+      for (var d in t.detailTransaksi) {
+        String cat = d.barang?.kategori ?? 'Lainnya';
+        if (revenueMap.containsKey(cat)) {
+          revenueMap[cat] =
+              revenueMap[cat]! + (d.barang?.hargaSewa ?? 0) * d.jumlah;
+        }
+      }
+    }
+
+    List<String> keys = revenueMap.keys.toList();
+    return List.generate(keys.length, (i) {
+      double value = revenueMap[keys[i]]!;
+      return BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: value > 0 ? value : 50000,
+            color: Colors.blueAccent,
+            width: 20,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
@@ -142,8 +269,11 @@ class OverviewTab extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 30),
             const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            Text(value,
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(title,
+                style: const TextStyle(fontSize: 12, color: Colors.grey)),
           ],
         ),
       ),
@@ -158,7 +288,10 @@ class BarangTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<BarangProvider>();
     return provider.isLoading
-        ? const Center(child: CircularProgressIndicator())
+        ? Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SkeletonLoader.productGrid(),
+          )
         : ListView.builder(
             itemCount: provider.items.length,
             itemBuilder: (context, index) {
@@ -174,7 +307,9 @@ class BarangTab extends StatelessWidget {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.orange),
-                      onPressed: () => showDialog(context: context, builder: (_) => BarangFormDialog(barang: item)),
+                      onPressed: () => showDialog(
+                          context: context,
+                          builder: (_) => BarangFormDialog(barang: item)),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
@@ -194,38 +329,193 @@ class TransaksiTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TransaksiProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return provider.isLoading
         ? const Center(child: CircularProgressIndicator())
         : ListView.builder(
+            padding: const EdgeInsets.all(16),
             itemCount: provider.transaksi.length,
             itemBuilder: (context, index) {
-              final t = provider.transaksi[index];
-              return ExpansionTile(
-                title: Text('Transaksi #${t.id} - ${t.user?.name}'),
-                subtitle: Text('Status: ${t.status.toUpperCase()}'),
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Pinjam: ${DateFormat('dd MMM yyyy').format(t.tanggalPinjam)}'),
-                        Text('Kembali: ${DateFormat('dd MMM yyyy').format(t.tanggalKembali)}'),
-                        const Divider(),
-                        ...t.detailTransaksi.map((d) => Text('• ${d.barang?.namaBarang} (${d.jumlah}x)')),
-                        const SizedBox(height: 16),
-                        if (t.status == 'dipinjam')
-                          ElevatedButton(
-                            onPressed: () => provider.updateStatus(t.id, 'kembali'),
-                            child: const Text('Tandai Sudah Kembali'),
-                          ),
-                      ],
+              final t =
+                  provider.transaksi[provider.transaksi.length - 1 - index];
+
+              final isLate = t.status == 'dipinjam' &&
+                  DateTime.now().isAfter(t.tanggalKembali);
+
+              Color statusColor = Colors.green;
+              if (isLate) {
+                statusColor = Colors.red;
+              } else if (t.status == 'dipinjam') {
+                statusColor = Colors.orange;
+              }
+
+              return Card(
+                elevation: 2,
+                margin: const EdgeInsets.only(bottom: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15)),
+                child: ListTile(
+                  onTap: () => _showTransactionDetail(context, t),
+                  leading: CircleAvatar(
+                    backgroundColor: statusColor.withOpacity(0.1),
+                    child: Icon(
+                      isLate
+                          ? Icons.warning_amber_rounded
+                          : (t.status == 'dipinjam'
+                              ? Icons.timer
+                              : Icons.check_circle_outline),
+                      color: statusColor,
                     ),
                   ),
-                ],
+                  title: Text('TRX-${t.id} • ${t.user?.name}',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(
+                    '${DateFormat('dd MMM').format(t.tanggalPinjam)} - ${DateFormat('dd MMM').format(t.tanggalKembali)}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  trailing: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isLate ? 'TERLAMBAT' : t.status.toUpperCase(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
               );
             },
           );
+  }
+
+  void _showTransactionDetail(BuildContext context, t) {
+    final provider = context.read<TransaksiProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey.shade900 : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 50,
+                height: 5,
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Detail Transaksi',
+                    style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87)),
+                IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close)),
+              ],
+            ),
+            const Divider(),
+            const SizedBox(height: 16),
+            _buildInfoRow(
+                'Customer', t.user?.name ?? 'Unknown', Icons.person_outline),
+            _buildInfoRow('Email', t.user?.email ?? '-', Icons.email_outlined),
+            _buildInfoRow(
+                'Tanggal Pinjam',
+                DateFormat('dd MMMM yyyy').format(t.tanggalPinjam),
+                Icons.calendar_today_outlined),
+            _buildInfoRow(
+                'Jadwal Kembali',
+                DateFormat('dd MMMM yyyy').format(t.tanggalKembali),
+                Icons.event_available_outlined),
+            const SizedBox(height: 16),
+            const Text('Item yang Disewa:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ...t.detailTransaksi
+                .map<Widget>((d) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.arrow_right,
+                              size: 16, color: Colors.blueAccent),
+                          Expanded(
+                              child: Text('${d.barang?.namaBarang} (${d.jumlah}x)')),
+                          Text(NumberFormat.currency(
+                                  locale: 'id', symbol: 'Rp ', decimalDigits: 0)
+                              .format((d.barang?.hargaSewa ?? 0) * d.jumlah)),
+                        ],
+                      ),
+                    ))
+                .toList(),
+            const SizedBox(height: 32),
+            if (t.status == 'dipinjam')
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await provider.updateStatus(t.id, 'kembali');
+                    if (context.mounted) Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                        content: Text('Status Berhasil Diupdate!')));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('TANDAI SUDAH KEMBALI',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: Colors.blueAccent),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -270,23 +560,37 @@ class _BarangFormDialogState extends State<BarangFormDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(controller: _namaController, decoration: const InputDecoration(labelText: 'Nama Barang')),
-            TextField(controller: _kategoriController, decoration: const InputDecoration(labelText: 'Kategori')),
-            TextField(controller: _deskripsiController, decoration: const InputDecoration(labelText: 'Deskripsi')),
-            TextField(controller: _hargaController, decoration: const InputDecoration(labelText: 'Harga Sewa'), keyboardType: TextInputType.number),
-            TextField(controller: _stokController, decoration: const InputDecoration(labelText: 'Stok'), keyboardType: TextInputType.number),
+            TextField(
+                controller: _namaController,
+                decoration: const InputDecoration(labelText: 'Nama Barang')),
+            TextField(
+                controller: _kategoriController,
+                decoration: const InputDecoration(labelText: 'Kategori')),
+            TextField(
+                controller: _deskripsiController,
+                decoration: const InputDecoration(labelText: 'Deskripsi')),
+            TextField(
+                controller: _hargaController,
+                decoration: const InputDecoration(labelText: 'Harga Sewa'),
+                keyboardType: TextInputType.number),
+            TextField(
+                controller: _stokController,
+                decoration: const InputDecoration(labelText: 'Stok'),
+                keyboardType: TextInputType.number),
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _pickImage,
               icon: const Icon(Icons.image),
               label: const Text('Pilih Gambar'),
             ),
-            if (_imageFile != null) Text('Gambar dipilih: ${_imageFile!.path.split('/').last}'),
+            if (_imageFile != null)
+              Text('Gambar dipilih: ${_imageFile!.path.split('/').last}'),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+        TextButton(
+            onPressed: () => Navigator.pop(context), child: const Text('Batal')),
         ElevatedButton(
           onPressed: () async {
             final data = {

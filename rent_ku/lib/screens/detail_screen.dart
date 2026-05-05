@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/barang_model.dart';
 import '../providers/transaksi_provider.dart';
 import '../utils/constants.dart';
+import 'package:lottie/lottie.dart';
 
 class DetailScreen extends StatefulWidget {
   final BarangModel barang;
@@ -28,10 +29,35 @@ class _DetailScreenState extends State<DetailScreen> {
         ],
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Berhasil menyewa barang!')),
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Lottie.network(
+                  'https://assets10.lottiefiles.com/packages/lf20_kz9m5c2v.json', // More stable URL
+                  width: 150,
+                  height: 150,
+                  repeat: false,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.check_circle, size: 80, color: Colors.green);
+                  },
+                ),
+                const Text('Berhasil menyewa barang!', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Back to Home
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,7 +79,10 @@ class _DetailScreenState extends State<DetailScreen> {
               width: double.infinity,
               color: Colors.grey.shade200,
               child: widget.barang.gambarUrl != null
-                  ? Image.network(widget.barang.gambarUrl!, fit: BoxFit.cover)
+                  ? Hero(
+                      tag: 'barang_${widget.barang.id}',
+                      child: Image.network(widget.barang.gambarUrl!, fit: BoxFit.cover),
+                    )
                   : const Icon(Icons.image, size: 100, color: Colors.grey),
             ),
             Padding(

@@ -15,6 +15,9 @@ class BarangProvider with ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      // Tambahkan delay 2 detik biar efek Shimmer-nya kelihatan (hanya untuk testing)
+      await Future.delayed(const Duration(seconds: 2));
+      
       final response = await _apiService.dio.get('/barang');
       _items = (response.data as List).map((i) => BarangModel.fromJson(i)).toList();
     } catch (e) {

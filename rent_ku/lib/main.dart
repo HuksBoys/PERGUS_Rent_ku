@@ -9,6 +9,7 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/admin_dashboard.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/main_navigation_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
@@ -98,7 +99,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
       if (auth.user?.role == 'admin') {
         return const AdminDashboard();
       }
-      return const HomeScreen();
+      return const MainNavigationScreen();
     }
     return const LoginScreen();
   }
