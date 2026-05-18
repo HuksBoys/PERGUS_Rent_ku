@@ -13,6 +13,7 @@ class Barang extends Model
 
     protected $fillable = [
         'nama_barang',
+        'category_id',
         'kategori',
         'deskripsi',
         'harga_sewa',
@@ -21,6 +22,11 @@ class Barang extends Model
     ];
 
     protected $appends = ['gambar_url'];
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     public function getGambarUrlAttribute()
     {

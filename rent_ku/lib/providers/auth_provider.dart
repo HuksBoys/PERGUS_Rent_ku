@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../services/api_service.dart';
+import 'package:dio/dio.dart';
 
 class AuthProvider with ChangeNotifier {
   UserModel? _user;
@@ -27,6 +29,20 @@ class AuthProvider with ChangeNotifier {
       await prefs.setString('user_role', _user!.role);
 
       notifyListeners();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 422) {
+        final dynamic errorData = e.response?.data;
+        if (errorData is Map && errorData.containsKey('errors')) {
+          String errorMessage = 'Login Gagal:';
+          (errorData['errors'] as Map).forEach((key, value) {
+            errorMessage += '\n• ${value[0]}';
+          });
+          throw errorMessage;
+        } else if (errorData is Map && errorData.containsKey('message')) {
+          throw 'Login Gagal: ${errorData['message']}';
+        }
+      }
+      rethrow;
     } catch (e) {
       rethrow;
     }
@@ -48,6 +64,16 @@ class AuthProvider with ChangeNotifier {
       await prefs.setString('user_role', _user!.role);
 
       notifyListeners();
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 422) {
+        final Map<String, dynamic> errors = e.response?.data['errors'] ?? {};
+        String errorMessage = 'Registrasi Gagal:';
+        errors.forEach((key, value) {
+          errorMessage += '\n• ${value[0]}';
+        });
+        throw errorMessage;
+      }
+      rethrow;
     } catch (e) {
       rethrow;
     }
@@ -63,6 +89,25 @@ class AuthProvider with ChangeNotifier {
       await prefs.remove('token');
       await prefs.remove('user_role');
       notifyListeners();
+    }
+  }
+
+  Future<void> updateProfile({String? name, File? photo}) async {
+    try {
+      FormData formData = FormData();
+      if (name != null) formData.fields.add(MapEntry('name', name));
+      if (photo != null) {
+        formData.files.add(MapEntry(
+          'profile_photo',
+          await MultipartFile.fromFile(photo.path),
+        ));
+      }
+
+      final response = await _apiService.dio.post('/profile/update', data: formData);
+      _user = UserModel.fromJson(response.data);
+      notifyListeners();
+    } catch (e) {
+      rethrow;
     }
   }
 

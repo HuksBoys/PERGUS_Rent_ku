@@ -71,4 +71,32 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        ]);
+
+        if ($request->has('name')) {
+            $user->name = $request->name;
+        }
+
+        if ($request->hasFile('profile_photo')) {
+            // Delete old photo if exists
+            if ($user->profile_photo) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete('profiles/' . $user->profile_photo);
+            }
+
+            $path = $request->file('profile_photo')->store('profiles', 'public');
+            $user->profile_photo = basename($path);
+        }
+
+        $user->save();
+
+        return response()->json($user);
+    }
 }

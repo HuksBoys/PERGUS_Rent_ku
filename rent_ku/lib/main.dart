@@ -5,6 +5,8 @@ import 'providers/auth_provider.dart';
 import 'providers/barang_provider.dart';
 import 'providers/transaksi_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/category_provider.dart';
+import 'providers/chat_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/admin_dashboard.dart';
@@ -27,6 +29,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()..checkLogin()),
         ChangeNotifierProvider(create: (_) => BarangProvider()),
         ChangeNotifierProvider(create: (_) => TransaksiProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {

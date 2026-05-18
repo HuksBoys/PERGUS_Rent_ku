@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/barang_model.dart';
+import '../models/user_model.dart';
 import '../providers/transaksi_provider.dart';
+import '../providers/chat_provider.dart';
 import '../utils/constants.dart';
 import 'package:lottie/lottie.dart';
+import 'chat_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final BarangModel barang;
@@ -163,6 +166,39 @@ class _DetailScreenState extends State<DetailScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       child: const Text('SEWA SEKARANG'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final chatProvider = context.read<ChatProvider>();
+                        final adminId = await chatProvider.getAdminId();
+                        if (adminId != null && mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatScreen(
+                                receiver: UserModel(
+                                    id: adminId,
+                                    name: 'Admin RentKU',
+                                    email: 'admin@rentku.com',
+                                    role: 'admin'),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.chat_outlined),
+                      label: const Text('CHAT ADMIN'),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Colors.blue),
+                        foregroundColor: Colors.blue,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],

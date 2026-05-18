@@ -245,10 +245,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                               BorderRadius.circular(8),
                                         ),
                                         child: Text(
-                                          item.kategori,
-                                          style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10),
+                                          item.category?.name ?? item.kategori,
+                                          style: const TextStyle(color: Colors.white, fontSize: 10),
                                         ),
                                       ),
                                     ),

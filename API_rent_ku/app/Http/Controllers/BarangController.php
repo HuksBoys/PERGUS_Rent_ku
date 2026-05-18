@@ -10,27 +10,14 @@ class BarangController extends Controller
 {
     public function index()
     {
-        return response()->json(Barang::all());
+        return response()->json(Barang::with('category')->get());
     }
 
     public function store(Request $request)
     {
-        // Debugging di terminal php artisan serve
-        if ($request->hasFile('gambar')) {
-            $file = $request->file('gambar');
-            dump([
-                'msg' => 'Debugging Upload',
-                'name' => $file->getClientOriginalName(),
-                'mime' => $file->getMimeType(),
-                'ext' => $file->getClientOriginalExtension(),
-                'isValid' => $file->isValid(),
-                'error' => $file->getError(),
-            ]);
-        }
-
         $request->validate([
             'nama_barang' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
+            'category_id' => 'required|exists:categories,id',
             'deskripsi' => 'nullable|string',
             'harga_sewa' => 'required|numeric',
             'stok' => 'required|integer',
@@ -45,19 +32,19 @@ class BarangController extends Controller
 
         $barang = Barang::create($data);
 
-        return response()->json($barang, 201);
+        return response()->json($barang->load('category'), 201);
     }
 
     public function show(Barang $barang)
     {
-        return response()->json($barang);
+        return response()->json($barang->load('category'));
     }
 
     public function update(Request $request, Barang $barang)
     {
         $request->validate([
             'nama_barang' => 'sometimes|required|string|max:255',
-            'kategori' => 'sometimes|required|string|max:255',
+            'category_id' => 'sometimes|required|exists:categories,id',
             'deskripsi' => 'nullable|string',
             'harga_sewa' => 'sometimes|required|numeric',
             'stok' => 'sometimes|required|integer',
@@ -76,7 +63,7 @@ class BarangController extends Controller
 
         $barang->update($data);
 
-        return response()->json($barang);
+        return response()->json($barang->load('category'));
     }
 
     public function destroy(Barang $barang)

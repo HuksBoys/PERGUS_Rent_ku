@@ -5,12 +5,14 @@ import '../providers/auth_provider.dart';
 import '../providers/barang_provider.dart';
 import '../providers/transaksi_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/category_provider.dart';
 import '../models/barang_model.dart';
 import '../utils/constants.dart';
 import '../widgets/skeleton_loader.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'scanner_screen.dart';
+import 'chat_list_screen.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -27,10 +29,11 @@ class _AdminDashboardState extends State<AdminDashboard>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     Future.microtask(() {
       context.read<BarangProvider>().fetchItems();
       context.read<TransaksiProvider>().fetchTransaksi();
+      context.read<CategoryProvider>().fetchCategories();
     });
   }
 
@@ -46,6 +49,7 @@ class _AdminDashboardState extends State<AdminDashboard>
             Tab(icon: Icon(Icons.dashboard), text: 'Ringkasan'),
             Tab(icon: Icon(Icons.inventory), text: 'Barang'),
             Tab(icon: Icon(Icons.receipt_long), text: 'Transaksi'),
+            Tab(icon: Icon(Icons.message_outlined), text: 'Pesan'),
           ],
         ),
         actions: [
@@ -72,6 +76,7 @@ class _AdminDashboardState extends State<AdminDashboard>
           const OverviewTab(),
           const BarangTab(),
           const TransaksiTab(),
+          const ChatListScreen(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -93,6 +98,7 @@ class OverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final barangProvider = context.watch<BarangProvider>();
     final transaksiProvider = context.watch<TransaksiProvider>();
+    final categoryProvider = context.watch<CategoryProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final totalBarang = barangProvider.items.length;
@@ -158,7 +164,9 @@ class OverviewTab extends StatelessWidget {
                 ),
               ],
             ),
-            child: BarChart(
+            child: categoryProvider.categories.isEmpty 
+            ? const Center(child: Text('Belum ada data kategori'))
+            : BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
                 maxY: 1000000,
@@ -171,21 +179,13 @@ class OverviewTab extends StatelessWidget {
                       getTitlesWidget: (double value, TitleMeta meta) {
                         const style = TextStyle(
                             fontSize: 10, fontWeight: FontWeight.bold);
-                        String text = '';
-                        switch (value.toInt()) {
-                          case 0:
-                            text = 'Kamera';
-                            break;
-                          case 1:
-                            text = 'Laptop';
-                            break;
-                          case 2:
-                            text = 'Drone';
-                            break;
-                          case 3:
-                            text = 'HP';
-                            break;
-                        }
+                        
+                        final cats = categoryProvider.categories;
+                        int index = value.toInt();
+                        String text = (index >= 0 && index < cats.length) 
+                            ? cats[index].name 
+                            : '';
+
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
                           child: Text(text, style: style),
@@ -202,7 +202,7 @@ class OverviewTab extends StatelessWidget {
                 ),
                 gridData: const FlGridData(show: false),
                 borderData: FlBorderData(show: false),
-                barGroups: _generateBarGroups(transaksiProvider),
+                barGroups: _generateBarGroups(transaksiProvider, categoryProvider),
               ),
             ),
           ),
@@ -223,27 +223,27 @@ class OverviewTab extends StatelessWidget {
     );
   }
 
-  List<BarChartGroupData> _generateBarGroups(TransaksiProvider provider) {
-    Map<String, double> revenueMap = {
-      'Kamera': 0,
-      'Laptop': 0,
-      'Drone': 0,
-      'HP': 0
-    };
+  List<BarChartGroupData> _generateBarGroups(TransaksiProvider provider, CategoryProvider catProvider) {
+    Map<String, double> revenueMap = {};
+    for (var cat in catProvider.categories) {
+      revenueMap[cat.name] = 0;
+    }
 
     for (var t in provider.transaksi) {
       for (var d in t.detailTransaksi) {
-        String cat = d.barang?.kategori ?? 'Lainnya';
-        if (revenueMap.containsKey(cat)) {
-          revenueMap[cat] =
-              revenueMap[cat]! + (d.barang?.hargaSewa ?? 0) * d.jumlah;
+        String catName = d.barang?.category?.name ?? d.barang?.kategori ?? 'Lainnya';
+        if (revenueMap.containsKey(catName)) {
+          revenueMap[catName] =
+              revenueMap[catName]! + (d.barang?.hargaSewa ?? 0) * d.jumlah;
+        } else {
+           revenueMap[catName] = (d.barang?.hargaSewa ?? 0) * d.jumlah;
         }
       }
     }
 
-    List<String> keys = revenueMap.keys.toList();
+    List<String> keys = catProvider.categories.map((c) => c.name).toList();
     return List.generate(keys.length, (i) {
-      double value = revenueMap[keys[i]]!;
+      double value = revenueMap[keys[i]] ?? 0;
       return BarChartGroupData(
         x: i,
         barRods: [
@@ -301,7 +301,7 @@ class BarangTab extends StatelessWidget {
                     ? Image.network(item.gambarUrl!, width: 50)
                     : const Icon(Icons.image),
                 title: Text(item.namaBarang),
-                subtitle: Text('Stok: ${item.stok} | Rp ${item.hargaSewa}'),
+                subtitle: Text('${item.category?.name ?? item.kategori} | Stok: ${item.stok} | Rp ${item.hargaSewa}'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -529,18 +529,19 @@ class BarangFormDialog extends StatefulWidget {
 
 class _BarangFormDialogState extends State<BarangFormDialog> {
   final _namaController = TextEditingController();
-  final _kategoriController = TextEditingController();
   final _deskripsiController = TextEditingController();
   final _hargaController = TextEditingController();
   final _stokController = TextEditingController();
+  int? _selectedCategoryId;
   File? _imageFile;
 
   @override
   void initState() {
     super.initState();
+    Future.microtask(() => context.read<CategoryProvider>().fetchCategories());
     if (widget.barang != null) {
       _namaController.text = widget.barang!.namaBarang;
-      _kategoriController.text = widget.barang!.kategori;
+      _selectedCategoryId = widget.barang!.categoryId;
       _deskripsiController.text = widget.barang!.deskripsi ?? '';
       _hargaController.text = widget.barang!.hargaSewa.toString();
       _stokController.text = widget.barang!.stok.toString();
@@ -552,8 +553,43 @@ class _BarangFormDialogState extends State<BarangFormDialog> {
     if (picked != null) setState(() => _imageFile = File(picked.path));
   }
 
+  void _showAddCategoryDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tambah Kategori'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(labelText: 'Nama Kategori'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal')),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.text.isNotEmpty) {
+                final newCat = await context
+                    .read<CategoryProvider>()
+                    .addCategory(controller.text);
+                if (mounted) {
+                  setState(() => _selectedCategoryId = newCat.id);
+                  Navigator.pop(context);
+                }
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final categoryProvider = context.watch<CategoryProvider>();
+
     return AlertDialog(
       title: Text(widget.barang == null ? 'Tambah Barang' : 'Edit Barang'),
       content: SingleChildScrollView(
@@ -563,9 +599,28 @@ class _BarangFormDialogState extends State<BarangFormDialog> {
             TextField(
                 controller: _namaController,
                 decoration: const InputDecoration(labelText: 'Nama Barang')),
-            TextField(
-                controller: _kategoriController,
-                decoration: const InputDecoration(labelText: 'Kategori')),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<int>(
+                    value: _selectedCategoryId,
+                    decoration: const InputDecoration(labelText: 'Kategori'),
+                    items: categoryProvider.categories.map((cat) {
+                      return DropdownMenuItem(
+                          value: cat.id, child: Text(cat.name));
+                    }).toList(),
+                    onChanged: (val) =>
+                        setState(() => _selectedCategoryId = val),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.add_circle_outline,
+                      color: Colors.blueAccent),
+                  onPressed: _showAddCategoryDialog,
+                ),
+              ],
+            ),
             TextField(
                 controller: _deskripsiController,
                 decoration: const InputDecoration(labelText: 'Deskripsi')),
@@ -593,9 +648,14 @@ class _BarangFormDialogState extends State<BarangFormDialog> {
             onPressed: () => Navigator.pop(context), child: const Text('Batal')),
         ElevatedButton(
           onPressed: () async {
+            if (_selectedCategoryId == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Pilih kategori dulu!')));
+              return;
+            }
             final data = {
               'nama_barang': _namaController.text,
-              'kategori': _kategoriController.text,
+              'category_id': _selectedCategoryId,
               'deskripsi': _deskripsiController.text,
               'harga_sewa': _hargaController.text,
               'stok': _stokController.text,
@@ -604,7 +664,9 @@ class _BarangFormDialogState extends State<BarangFormDialog> {
             if (widget.barang == null) {
               await context.read<BarangProvider>().addItem(data);
             } else {
-              await context.read<BarangProvider>().updateItem(widget.barang!.id, data);
+              await context
+                  .read<BarangProvider>()
+                  .updateItem(widget.barang!.id, data);
             }
             if (mounted) Navigator.pop(context);
           },

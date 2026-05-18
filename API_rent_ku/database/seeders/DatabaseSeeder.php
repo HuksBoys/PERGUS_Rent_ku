@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Barang;
+use App\Models\Category;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -31,9 +32,16 @@ class DatabaseSeeder extends Seeder
             'role' => 'user',
         ]);
 
+        // Categories
+        $kamera = Category::create(['name' => 'Kamera']);
+        $laptop = Category::create(['name' => 'Laptop']);
+        $drone = Category::create(['name' => 'Drone']);
+        $smartphone = Category::create(['name' => 'Smartphone']);
+
         // Sample Products
         Barang::create([
             'nama_barang' => 'Kamera Sony A7 III',
+            'category_id' => $kamera->id,
             'kategori' => 'Kamera',
             'deskripsi' => 'Kamera Mirrorless Full-frame dengan fitur video 4K.',
             'harga_sewa' => 250000,
@@ -42,6 +50,7 @@ class DatabaseSeeder extends Seeder
 
         Barang::create([
             'nama_barang' => 'Laptop ASUS ROG',
+            'category_id' => $laptop->id,
             'kategori' => 'Laptop',
             'deskripsi' => 'Laptop gaming performa tinggi.',
             'harga_sewa' => 500000,
@@ -50,6 +59,7 @@ class DatabaseSeeder extends Seeder
 
         Barang::create([
             'nama_barang' => 'Drone DJI Mavic Air 2',
+            'category_id' => $drone->id,
             'kategori' => 'Drone',
             'deskripsi' => 'Drone dengan kamera 48MP dan waktu terbang 34 menit.',
             'harga_sewa' => 350000,
